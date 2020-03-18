@@ -8,6 +8,7 @@
             <table class="table">
                 <thead>
                 <tr>
+                    <th scope="col">Number</th>
                     <th scope="col">Title</th>
                     <th scope="col">Price</th>
                     <th scope="col">Quantity</th>
@@ -17,6 +18,7 @@
                 <tbody>
                 {% for order_item in object.items.all %}
                     <tr>
+                        <td>{{ forloop.counter}}</td>
                         <td>{{ order_item.item.title}}</td>
                         <td>{{ order_item.item.price}}</td>
                         <td>{{ order_item.quantity}}</td>
@@ -30,6 +32,17 @@
                         </td>
                     </tr>
                 {% endfor %}
+                <tr>
+                    <td colspan="4"><b>Order Total</b></td>
+                    <td><b>{{ object.get_final_price }}</b></td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <a class="btn-primary btn float-right ml-2" href="{% url "core:home" %}">Continue shopping</a>
+                        <a class="btn-warning btn float-right" href="{% url "core:checkout" %}">Proceed to Checkout</a>
+                    </td>
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
