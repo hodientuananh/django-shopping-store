@@ -11,7 +11,7 @@
         <!--Grid column-->
         <div class="col-md-6 mb-4">
 
-          <img src="https://mdbootstrap.com/img/Photos/Horizontal/E-commerce/Products/14.jpg" class="img-fluid" alt="">
+          <img src="{{ object.promote_image }}" class="img-fluid" alt="">
 
         </div>
         <!--Grid column-->
@@ -24,7 +24,7 @@
 
             <div class="mb-3">
               <a href="">
-                <span class="badge purple mr-1">{{ object.get_category_display }}</span>
+                <span class="badge purple mr-1 btn-{{ object.get_label_display }}">{{ object.get_category_display }}</span>
               </a>
             </div>
 
@@ -50,6 +50,8 @@
 {#              <input type="number" value="1" aria-label="Search" class="form-control" style="width: 100px">#}
               <a class="btn btn-primary btn-md my-0 p" href="{{ object.get_add_to_cart }}">Add to cart
                 <i class="fas fa-shopping-cart ml-1"></i>
+              </a>
+                <a class="btn btn-danger btn-md my-0 p" href="{{ object.get_remove_from_cart }}">Remove from cart
               </a>
 
             </form>
