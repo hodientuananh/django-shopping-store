@@ -10,6 +10,7 @@ from .models import Item, Order, OrderItem
 
 class HomeView(ListView):
     model = Item
+    paginate_by = 4
     template_name = "core/home.html"
 
 
@@ -56,10 +57,6 @@ def remove_from_cart(request, slug):
     else:
         messages.info(request, "No order can be removed now")
     return redirect("core:product", slug=slug)
-
-
-def item_list(request):
-    return render(request, "core/home.html", {"items": Item.objects.all})
 
 
 def checkout_page(request):
