@@ -20,7 +20,7 @@ LABEL_CHOICES = (
 class Item(models.Model):
     title = models.CharField(max_length=100)
     price = models.FloatField()
-    discount_price = models.FloatField(blank=True, null=True)
+    discount_price = models.FloatField(default=0)
     promote_image = models.CharField(max_length=200)
     category = models.CharField(choices=CATEGORY_CHOICES, max_length=100)
     label = models.CharField(choices=LABEL_CHOICES, max_length=100)
@@ -29,6 +29,9 @@ class Item(models.Model):
 
     def __str__(self):
         return self.title
+
+    def hasDiscount(self):
+        return 0 <= self.discount_price < self.price
 
     def get_absolute_url(self):
         return reverse("core:product", kwargs={
@@ -40,8 +43,13 @@ class Item(models.Model):
             "slug": self.slug
         })
 
-    def get_remove_from_cart(self):
-        return reverse("core:remove-from-cart", kwargs={
+    def get_remove_from_cart_and_go_to_product(self):
+        return reverse("core:remove-from-cart-and-go-to-product", kwargs={
+            "slug": self.slug
+        })
+
+    def get_remove_from_cart_and_go_to_summary(self):
+        return reverse("core:remove-from-cart-and-go-to-summary", kwargs={
             "slug": self.slug
         })
 
@@ -85,4 +93,10 @@ class Order(models.Model):
         total = 0
         for item in self.items.all():
             total += item.get_final_total_price()
+        return total
+
+    def get_final_total_saved_price(self):
+        total = 0
+        for item in self.items.all():
+            total += item.get_total_saved_price()
         return total

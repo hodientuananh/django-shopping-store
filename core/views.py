@@ -37,6 +37,24 @@ class OrderSummaryView(LoginRequiredMixin, View):
             return redirect("/")
 
 
+def remove_all_items_from_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.info(request, "Order is removed")
+            OrderItem.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0].delete()
+        else:
+            messages.info(request, "No order item can be removed now")
+    else:
+        messages.info(request, "No order can be removed now")
+
+
 @login_required
 def add_to_cart(request, slug):
     item = get_object_or_404(Item, slug=slug)
@@ -60,18 +78,33 @@ def add_to_cart(request, slug):
 
 
 @login_required
-def remove_from_cart(request, slug):
+def remove_from_cart_and_go_to_product(request, slug):
+    remove_all_items_from_cart(request, slug)
+    return redirect("core:product", slug=slug)
+
+
+@login_required
+def remove_from_cart_and_go_to_summary(request, slug):
+    remove_all_items_from_cart(request, slug)
+    return redirect("core:order-summary")
+
+
+@login_required
+def remove_one_item_from_cart(request, slug):
     item = get_object_or_404(Item, slug=slug)
     order_query_set = Order.objects.filter(user=request.user, ordered=False)
     if order_query_set.exists():
         order = order_query_set[0]
         if order.items.filter(item__slug=item.slug).exists():
-            messages.info(request, "Order is removed")
-            OrderItem.objects.filter(
+            messages.info(request, "Order quantity is decreased 1")
+            order_item = OrderItem.objects.filter(
                 item=item,
                 user=request.user,
                 ordered=False
-            )[0].delete()
+            )[0]
+            order_item.quantity -= 1
+            order_item.save()
+            return redirect("core:order-summary")
         else:
             messages.info(request, "No order item can be removed now")
     else:
@@ -79,5 +112,28 @@ def remove_from_cart(request, slug):
     return redirect("core:product", slug=slug)
 
 
+@login_required
+def add_one_item_to_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_item, created_date = OrderItem.objects.get_or_create(item=item, user=request.user, ordered=False)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.success(request, "Order item is increased to %s" % (order_item.quantity + 1))
+            order_item.quantity += 1
+            order_item.save()
+            return redirect("core:order-summary")
+        else:
+            messages.success(request, "Order item is added")
+            order.items.add(order_item)
+    else:
+        messages.success(request, "Order is added")
+        ordered_date = timezone.now()
+        order = Order.objects.create(user=request.user, ordered_date=ordered_date)
+        order.items.add(order_item)
+    return redirect("core:product")
+
+@login_required
 def checkout_page(request):
     return render(request, "core/checkout.html", {})

@@ -29,7 +29,7 @@
             </div>
 
             <p class="lead">
-                {% if object.discount_price %}
+                {% if object.hasDiscount %}
                     <span class="mr-1">
                         <del>${{ object.price }}</del>
                     </span>
@@ -52,7 +52,7 @@
                   <a class="btn btn-primary btn-md my-0 p" href="{{ object.get_add_to_cart }}">Add to cart
                     <i class="fas fa-shopping-cart ml-1"></i>
                   </a>
-                    <a class="btn btn-danger btn-md my-0 p" href="{{ object.get_remove_from_cart }}">Remove from cart
+                    <a class="btn btn-danger btn-md my-0 p" href="{{ object.get_remove_from_cart_and_go_to_product }}">Remove from cart
                   </a>
                 </form>
             {% endif %}

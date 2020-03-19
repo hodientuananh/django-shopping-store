@@ -21,28 +21,49 @@
                         <td>{{ forloop.counter}}</td>
                         <td>{{ order_item.item.title}}</td>
                         <td>{{ order_item.item.price}}</td>
-                        <td>{{ order_item.quantity}}</td>
                         <td>
-                            {% if order_item.item.discount_price %}
+                            <a href="{% url 'core:add-one-item-to-cart' order_item.item.slug %}"><i class="fas fa-plus-square ml-2"></i></a>
+                            {{ order_item.quantity}}
+                            <a href="{% url 'core:remove-one-item-from-cart' order_item.item.slug %}"><i class="far fa-minus-square mr-2"></i></a>
+                        </td>
+                        <td>
+                            {% if order_item.item.hasDiscount %}
                                 {{ order_item.get_total_discount_price }}
                                 <span class="badge badge-primary">Saving {{ order_item.get_total_saved_price }}</span>
                             {% else %}
                                 {{ order_item.get_total_price }}
                             {% endif %}
+                            <a href="{{ order_item.item.get_remove_from_cart_and_go_to_summary }}">
+                                <i class="far fa-trash-alt float-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Your cart is empty</td>
+                        <td colspan="5">
+                            <a class="btn-primary btn float-right ml-2" href="{% url "core:home" %}">Continue
+                                shopping</a>
                         </td>
                     </tr>
                 {% endfor %}
-                <tr>
-                    <td colspan="4"><b>Order Total</b></td>
-                    <td><b>{{ object.get_final_price }}</b></td>
-                </tr>
-                <tr>
-                    <td colspan="5">
-                        <a class="btn-primary btn float-right ml-2" href="{% url "core:home" %}">Continue shopping</a>
-                        <a class="btn-warning btn float-right" href="{% url "core:checkout" %}">Proceed to Checkout</a>
-                    </td>
-                    </td>
-                </tr>
+                {% if object.get_final_price %}
+                    <tr>
+                        <td colspan="4"><b>Order Total</b></td>
+                        <td>
+                            <b>{{ object.get_final_price }}</b>
+                            <span class="badge badge-primary">Saving {{ object.get_final_total_saved_price }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="5">
+                            <a class="btn-primary btn float-right ml-2" href="{% url "core:home" %}">Continue
+                                shopping</a>
+                            <a class="btn-warning btn float-right" href="{% url "core:checkout" %}">Proceed to
+                                Checkout</a>
+                        </td>
+                    </tr>
+                {% endif %}
                 </tbody>
             </table>
         </div>
