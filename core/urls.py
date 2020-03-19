@@ -14,5 +14,5 @@ urlpatterns = [
     path('remove-from-cart-and-go-to-summary/<slug>/', remove_from_cart_and_go_to_summary, name="remove-from-cart-and-go-to-summary"),
     path('remove-one-item-from-cart/<slug>/', remove_one_item_from_cart, name="remove-one-item-from-cart"),
     path('add-one-item-to-cart/<slug>/', add_one_item_to_cart, name="add-one-item-to-cart"),
-    path('payment/<payment_method>/', PaymentView.as_view(), name="payment"),
+    path('payment/<payment_option>/', PaymentView.as_view(), name="payment"),
 ]
