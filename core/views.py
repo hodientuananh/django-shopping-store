@@ -6,7 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Item, Order, OrderItem
+from .forms import CheckoutForm
+from .models import Item, Order, OrderItem, BillingAdress
 
 
 class HomeView(ListView):
@@ -19,6 +20,48 @@ class ItemDetailView(DetailView):
     model = Item
     template_name = "core/product.html"
 
+
+class CheckoutView(View):
+    def get(self, *args, **kwargs):
+        form = CheckoutForm()
+        context = {
+            "form": form
+        }
+        return render(self.request, "core/checkout.html", context)
+
+    def post(self, *args, **kwargs):
+        try:
+            order = Order.objects.get(user=self.request.user, ordered=False)
+            form = CheckoutForm(self.request.POST or None)
+            if form.is_valid():
+                street_address = form.cleaned_data.get("street_address")
+                apartment_address = form.cleaned_data.get("apartment_address")
+                country = form.cleaned_data.get("country")
+                zip = form.cleaned_data.get("zip")
+                # same_billing_address = form.cleaned_data.get("same_billing_address")
+                # save_info = form.cleaned_data.get("save_info")
+                payment_option = form.cleaned_data.get("payment_option")
+                bill_address = BillingAdress(
+                    user=self.request.user,
+                    street_address=street_address,
+                    apartment_address=apartment_address,
+                    country=country,
+                    zip=zip,
+                )
+                bill_address.save()
+                order.billing_address = bill_address
+                order.save()
+                return redirect("core:checkout")
+            messages.warning(self.request, "Form is invalid")
+            return redirect("core:checkout")
+        except ObjectDoesNotExist:
+            messages.error(self.request, "You do not have active order")
+            return redirect("/")
+
+
+class PaymentView(View):
+    def get(self, *args, **kwargs):
+        return render(self.request, "core/payment.html")
 
 class OrderSummaryView(LoginRequiredMixin, View):
     # model = Order
@@ -135,7 +178,3 @@ def add_one_item_to_cart(request, slug):
         order = Order.objects.create(user=request.user, ordered_date=ordered_date)
         order.items.add(order_item)
     return redirect("core:product")
-
-@login_required
-def checkout_page(request):
-    return render(request, "core/checkout.html", {})
