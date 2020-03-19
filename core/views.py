@@ -9,8 +9,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Item, Order, OrderItem
 
 
-# Create your views here.
-
 class HomeView(ListView):
     model = Item
     paginate_by = 4
@@ -68,6 +66,7 @@ def add_to_cart(request, slug):
             order_item.save()
         else:
             messages.success(request, "Order item is added")
+            order_item.quantity = 1
             order.items.add(order_item)
     else:
         messages.success(request, "Order is added")
@@ -102,8 +101,11 @@ def remove_one_item_from_cart(request, slug):
                 user=request.user,
                 ordered=False
             )[0]
-            order_item.quantity -= 1
-            order_item.save()
+            if order_item.quantity > 1:
+                order_item.quantity -= 1
+                order_item.save()
+            else:
+                order.items.remove(order_item)
             return redirect("core:order-summary")
         else:
             messages.info(request, "No order item can be removed now")
