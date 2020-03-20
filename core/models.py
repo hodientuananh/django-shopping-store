@@ -89,6 +89,12 @@ class Order(models.Model):
     ordered_date = models.DateTimeField()
     ordered = models.BooleanField(default=False)
     billing_address = models.ForeignKey('BillingAddress', on_delete=models.SET_NULL, blank=True, null=True)
+    payment = models.ForeignKey("Payment", on_delete=models.SET_NULL, blank=True, null=True)
+    being_delivered = models.BooleanField(default=False)
+    received = models.BooleanField(default=False)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)
+    ref_code = models.CharField(max_length=20)
 
     def __str__(self):
         return self.user.username + "-" + self.ordered_date.strftime("%m/%d/%Y, %H:%M:%S")

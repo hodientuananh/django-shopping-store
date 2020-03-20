@@ -11,8 +11,116 @@ from .forms import CheckoutForm, PaymentForm
 from .models import Item, Order, OrderItem, BillingAddress, Payment, UserProfile
 
 import stripe
+import random
+import string
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def create_ref_code():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
+
+
+def remove_all_items_from_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.info(request, "Order is removed")
+            OrderItem.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0].delete()
+        else:
+            messages.info(request, "No order item can be removed now")
+    else:
+        messages.info(request, "No order can be removed now")
+
+
+@login_required
+def add_to_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_item, created_date = OrderItem.objects.get_or_create(item=item, user=request.user, ordered=False)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.success(request, "Order item is increased to %s" % (order_item.quantity + 1))
+            order_item.quantity += 1
+            order_item.save()
+        else:
+            messages.success(request, "Order item is added")
+            order_item.quantity = 1
+            order.items.add(order_item)
+    else:
+        messages.success(request, "Order is added")
+        ordered_date = timezone.now()
+        order = Order.objects.create(user=request.user, ordered_date=ordered_date)
+        order.items.add(order_item)
+    return redirect("core:product", slug=slug)
+
+
+@login_required
+def remove_from_cart_and_go_to_product(request, slug):
+    remove_all_items_from_cart(request, slug)
+    return redirect("core:product", slug=slug)
+
+
+@login_required
+def remove_from_cart_and_go_to_summary(request, slug):
+    remove_all_items_from_cart(request, slug)
+    return redirect("core:order-summary")
+
+
+@login_required
+def remove_one_item_from_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.info(request, "Order quantity is decreased 1")
+            order_item = OrderItem.objects.filter(
+                item=item,
+                user=request.user,
+                ordered=False
+            )[0]
+            if order_item.quantity > 1:
+                order_item.quantity -= 1
+                order_item.save()
+            else:
+                order.items.remove(order_item)
+            return redirect("core:order-summary")
+        else:
+            messages.info(request, "No order item can be removed now")
+    else:
+        messages.info(request, "No order can be removed now")
+    return redirect("core:product", slug=slug)
+
+
+@login_required
+def add_one_item_to_cart(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_item, created_date = OrderItem.objects.get_or_create(item=item, user=request.user, ordered=False)
+    order_query_set = Order.objects.filter(user=request.user, ordered=False)
+    if order_query_set.exists():
+        order = order_query_set[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            messages.success(request, "Order item is increased to %s" % (order_item.quantity + 1))
+            order_item.quantity += 1
+            order_item.save()
+            return redirect("core:order-summary")
+        else:
+            messages.success(request, "Order item is added")
+            order.items.add(order_item)
+    else:
+        messages.success(request, "Order is added")
+        ordered_date = timezone.now()
+        order = Order.objects.create(user=request.user, ordered_date=ordered_date)
+        order.items.add(order_item)
+    return redirect("core:product")
 
 
 class HomeView(ListView):
@@ -124,6 +232,7 @@ class PaymentView(View):
 
                 order.ordered = True
                 order.payment = payment
+                order.ref_code = create_ref_code()
                 order.save()
 
                 messages.success(self.request, "Your order was successful!")
@@ -187,105 +296,3 @@ class OrderSummaryView(LoginRequiredMixin, View):
         except ObjectDoesNotExist:
             messages.error(self.request, "You do not have active order")
             return redirect("/")
-
-
-def remove_all_items_from_cart(request, slug):
-    item = get_object_or_404(Item, slug=slug)
-    order_query_set = Order.objects.filter(user=request.user, ordered=False)
-    if order_query_set.exists():
-        order = order_query_set[0]
-        if order.items.filter(item__slug=item.slug).exists():
-            messages.info(request, "Order is removed")
-            OrderItem.objects.filter(
-                item=item,
-                user=request.user,
-                ordered=False
-            )[0].delete()
-        else:
-            messages.info(request, "No order item can be removed now")
-    else:
-        messages.info(request, "No order can be removed now")
-
-
-@login_required
-def add_to_cart(request, slug):
-    item = get_object_or_404(Item, slug=slug)
-    order_item, created_date = OrderItem.objects.get_or_create(item=item, user=request.user, ordered=False)
-    order_query_set = Order.objects.filter(user=request.user, ordered=False)
-    if order_query_set.exists():
-        order = order_query_set[0]
-        if order.items.filter(item__slug=item.slug).exists():
-            messages.success(request, "Order item is increased to %s" % (order_item.quantity + 1))
-            order_item.quantity += 1
-            order_item.save()
-        else:
-            messages.success(request, "Order item is added")
-            order_item.quantity = 1
-            order.items.add(order_item)
-    else:
-        messages.success(request, "Order is added")
-        ordered_date = timezone.now()
-        order = Order.objects.create(user=request.user, ordered_date=ordered_date)
-        order.items.add(order_item)
-    return redirect("core:product", slug=slug)
-
-
-@login_required
-def remove_from_cart_and_go_to_product(request, slug):
-    remove_all_items_from_cart(request, slug)
-    return redirect("core:product", slug=slug)
-
-
-@login_required
-def remove_from_cart_and_go_to_summary(request, slug):
-    remove_all_items_from_cart(request, slug)
-    return redirect("core:order-summary")
-
-
-@login_required
-def remove_one_item_from_cart(request, slug):
-    item = get_object_or_404(Item, slug=slug)
-    order_query_set = Order.objects.filter(user=request.user, ordered=False)
-    if order_query_set.exists():
-        order = order_query_set[0]
-        if order.items.filter(item__slug=item.slug).exists():
-            messages.info(request, "Order quantity is decreased 1")
-            order_item = OrderItem.objects.filter(
-                item=item,
-                user=request.user,
-                ordered=False
-            )[0]
-            if order_item.quantity > 1:
-                order_item.quantity -= 1
-                order_item.save()
-            else:
-                order.items.remove(order_item)
-            return redirect("core:order-summary")
-        else:
-            messages.info(request, "No order item can be removed now")
-    else:
-        messages.info(request, "No order can be removed now")
-    return redirect("core:product", slug=slug)
-
-
-@login_required
-def add_one_item_to_cart(request, slug):
-    item = get_object_or_404(Item, slug=slug)
-    order_item, created_date = OrderItem.objects.get_or_create(item=item, user=request.user, ordered=False)
-    order_query_set = Order.objects.filter(user=request.user, ordered=False)
-    if order_query_set.exists():
-        order = order_query_set[0]
-        if order.items.filter(item__slug=item.slug).exists():
-            messages.success(request, "Order item is increased to %s" % (order_item.quantity + 1))
-            order_item.quantity += 1
-            order_item.save()
-            return redirect("core:order-summary")
-        else:
-            messages.success(request, "Order item is added")
-            order.items.add(order_item)
-    else:
-        messages.success(request, "Order is added")
-        ordered_date = timezone.now()
-        order = Order.objects.create(user=request.user, ordered_date=ordered_date)
-        order.items.add(order_item)
-    return redirect("core:product")

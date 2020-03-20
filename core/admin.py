@@ -8,12 +8,23 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ['user',
                     'ordered',
                     'billing_address',
+                    'being_delivered',
+                    'received',
+                    'refund_requested',
+                    'refund_granted',
                     ]
     list_display_links = [
         'user',
         'billing_address',
     ]
-    list_filter = ['ordered']
+    list_filter = ['user',
+                   'ordered',
+                   'billing_address',
+                   'being_delivered',
+                   'received',
+                   'refund_requested',
+                   'refund_granted',
+                   ]
     search_fields = [
         'user__username',
         'ref_code'
