@@ -1,5 +1,7 @@
 import os
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bootcamp.settings")
+
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 
 DEBUG = True
