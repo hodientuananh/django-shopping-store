@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Item, OrderItem, Order, Payment, BillingAddress, UserProfile
+from .models import Item, OrderItem, Order, Payment, BillingAddress, UserProfile, Refund
+
 
 # Register your models here.
 
@@ -37,3 +38,4 @@ admin.site.register(Order, OrderAdmin)
 admin.site.register(BillingAddress)
 admin.site.register(Payment)
 admin.site.register(UserProfile)
+admin.site.register(Refund)

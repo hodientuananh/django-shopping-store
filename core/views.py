@@ -7,8 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .forms import CheckoutForm, PaymentForm
-from .models import Item, Order, OrderItem, BillingAddress, Payment, UserProfile
+from .forms import CheckoutForm, PaymentForm, RefundForm
+from .models import Item, Order, OrderItem, BillingAddress, Payment, UserProfile, Refund
 
 import stripe
 import random
@@ -296,3 +296,35 @@ class OrderSummaryView(LoginRequiredMixin, View):
         except ObjectDoesNotExist:
             messages.error(self.request, "You do not have active order")
             return redirect("/")
+
+
+class RefundFormView(View):
+    def get(self, *args, **kwargs):
+        form = RefundForm
+        context = {
+            'form': form
+        }
+        return render(self.request, "core/request_refund.html", context)
+
+    def post(self, *args, **kwargs):
+        form = RefundForm(self.request.POST)
+        if form.is_valid():
+            ref_code = form.cleaned_data.get('ref_code')
+            message = form.cleaned_data.get('message')
+            email = form.cleaned_data.get('email')
+            try:
+                order = Order.objects.get(ref_code=ref_code)
+                order.refund_requested = True
+                order.save()
+
+                refund = Refund()
+                refund.order = order
+                refund.reason = message
+                refund.email = email
+                refund.save()
+                messages.success(self.request, "Add refund successfully")
+            except ObjectDoesNotExist:
+                messages.warning(self.request, "Cannot find the order")
+
+        return redirect("core:request-refund")
+
