@@ -12,7 +12,7 @@ from .models import Item, Order, OrderItem, BillingAddress, Payment, UserProfile
 
 import stripe
 
-stripe.api_key = "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 class HomeView(ListView):

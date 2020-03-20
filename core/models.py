@@ -1,3 +1,5 @@
+from time import strftime
+
 from django.conf import settings
 from django.db import models
 from django.shortcuts import reverse
@@ -89,7 +91,7 @@ class Order(models.Model):
     billing_address = models.ForeignKey('BillingAddress', on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
-        return self.user.username
+        return self.user.username + "-" + self.ordered_date.strftime("%m/%d/%Y, %H:%M:%S")
 
     def get_final_price(self):
         total = 0
@@ -123,7 +125,7 @@ class Payment(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.user.username
+        return self.user.username + "-" + self.timestamp.strftime("%m/%d/%Y, %H:%M:%S")
 
 
 class UserProfile(models.Model):
